@@ -11,7 +11,10 @@ type Accounts = {
   supporter: Keys,
 }
 export type AccountsState = "loading" | Accounts;
+
+
 export const useAccounts = () => {
+  // This is supposed to mock some local storage of your keys.
   const [accounts, setAccounts] = useState<AccountsState>("loading");
   useEffect(() => {
     (async () => {
