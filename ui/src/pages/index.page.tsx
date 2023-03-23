@@ -1,26 +1,21 @@
-
-import Head from 'next/head';
-import Image from 'next/image';
-import styles from '../styles/Home.module.css';
-import { useEffect, useState } from 'react';
-import type { Add } from '../../../contracts/src/';
-import {
-  Mina,
-  isReady,
-  PublicKey,
-  fetchAccount,
-} from 'snarkyjs';
+import Head from "next/head";
+import Image from "next/image";
+import styles from "../styles/Home.module.css";
+import { useEffect, useState } from "react";
+import type { Add } from "../../../contracts/src/";
+import { Mina, isReady, PublicKey, fetchAccount } from "snarkyjs";
 
 export default function Home() {
   useEffect(() => {
     (async () => {
       await isReady;
-      const { Add } = await import('../../../contracts/build/src/');
+      const { Add } = await import("../../../contracts/build/src/");
 
       // Update this to use the address (public key) for your zkApp account
-      // To try it out, you can try this address for an example "Add" smart contract that we've deployed to 
+      // To try it out, you can try this address for an example "Add" smart contract that we've deployed to
       // Berkeley Testnet B62qisn669bZqsh8yMWkNyCA7RvjrL6gfdr3TQxymDHNhTc97xE5kNV
-      const zkAppAddress = '';
+      const zkAppAddress =
+        "B62qisn669bZqsh8yMWkNyCA7RvjrL6gfdr3TQxymDHNhTc97xE5kNV";
       // This should be removed once the zkAppAddress is updated.
       if (!zkAppAddress) {
         console.error(
@@ -29,7 +24,6 @@ export default function Home() {
       }
 
       const zkApp = new Add(PublicKey.fromBase58(zkAppAddress));
-      
     })();
   }, []);
 
@@ -47,7 +41,7 @@ export default function Home() {
         </h1>
 
         <p className={styles.description}>
-          Get started by editing{' '}
+          Get started by editing{" "}
           <code className={styles.code}>pages/index.tsx</code>
         </p>
 
@@ -90,7 +84,7 @@ export default function Home() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Powered by{' '}
+          Powered by{" "}
           <span className={styles.logo}>
             <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
           </span>
@@ -99,4 +93,3 @@ export default function Home() {
     </div>
   );
 }
-
