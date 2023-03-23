@@ -10,8 +10,9 @@ type Accounts = {
   user: Keys,
   supporter: Keys,
 }
+export type AccountsState = "loading" | Accounts;
 export const useAccounts = () => {
-  const [accounts, setAccounts] = useState<"loading" | Accounts>("loading");
+  const [accounts, setAccounts] = useState<AccountsState>("loading");
   useEffect(() => {
     (async () => {
       await isReady;

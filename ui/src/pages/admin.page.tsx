@@ -1,7 +1,7 @@
 import PosiPage from "../../modules/posiPage";
 import { useAccounts } from "../../modules/useAccounts";
 
-export default function User() {
+export default function Admin() {
   const accounts = useAccounts();
-  return <PosiPage type={"user"} accounts={accounts} />;
+  return <PosiPage type={"admin"} accounts={accounts} />;
 }
