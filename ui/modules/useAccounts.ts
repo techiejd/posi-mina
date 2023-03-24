@@ -8,7 +8,7 @@ export type Keys = {
 
 type Accounts = {
   admin: Keys,
-  user: Keys,
+  maker: Keys,
   supporter: Keys,
 }
 export type AccountsState = "loading" | Accounts;
@@ -22,7 +22,7 @@ export const useAccounts = () => {
     if (blockchainState) {
       setAccounts({
         admin: blockchainState.local.testAccounts[0],
-        user: blockchainState.local.testAccounts[1],
+        maker: blockchainState.local.testAccounts[1],
         supporter: blockchainState.local.testAccounts[2],
       });
     }

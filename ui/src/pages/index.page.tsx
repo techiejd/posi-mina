@@ -6,7 +6,7 @@ import Box from "@mui/material/Box";
 import PosiPage from "../../modules/posiPage";
 import { useAccounts } from "../../modules/useAccounts";
 import Admin from "../../modules/admin.page";
-import User from "../../modules/user.page";
+import Maker from "../../modules/maker.page";
 import Supporter from "../../modules/supporter.page";
 
 interface TabPanelProps {
@@ -20,11 +20,7 @@ function TabPanel(props: TabPanelProps) {
 
   return (
     <div role="tabpanel" hidden={value !== index} {...other}>
-      {value === index && (
-        <Box sx={{ p: 3 }}>
-          <Typography>{children}</Typography>
-        </Box>
-      )}
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
     </div>
   );
 }
@@ -43,7 +39,7 @@ export default function BasicTabs() {
       <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
         <Tabs value={value} onChange={handleChange}>
           <Tab label="Admin" />
-          <Tab label="User" />
+          <Tab label="Maker" />
           <Tab label="Supporter" />
         </Tabs>
       </Box>
@@ -51,7 +47,7 @@ export default function BasicTabs() {
         <Admin />
       </TabPanel>
       <TabPanel value={value} index={1}>
-        <User />
+        <Maker />
       </TabPanel>
       <TabPanel value={value} index={2}>
         <Supporter />

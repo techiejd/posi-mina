@@ -8,7 +8,7 @@ const PosiPage = ({
   accounts,
   children,
 }: {
-  type: "user" | "admin" | "supporter";
+  type: "admin" | "maker" | "supporter";
   accounts: AccountsState;
   children?: ReactNode;
 }) => {
@@ -23,23 +23,20 @@ const PosiPage = ({
 
   return (
     <div>
-      <main>
-        <Box>
-          <Typography>
-            You're acting as {type} with key:{" "}
-            {myKeys == undefined ? "loading" : myKeys.publicKey.toBase58()}.
-          </Typography>
-          <Typography>
-            {myKeys && bState && (
-              <Typography>
-                And your balance is currently:{" "}
-                {bState.node.getBalance(myKeys.publicKey).toString()}
-              </Typography>
-            )}
-          </Typography>
-          {children}
-        </Box>
-      </main>
+      <Box>
+        <Typography>
+          You're acting as {type} with key:{" "}
+          {myKeys == undefined ? "loading" : myKeys.publicKey.toBase58()}.
+        </Typography>
+        <Typography>
+          {myKeys &&
+            bState &&
+            `And your balance is currently: ${bState.node
+              .getBalance(myKeys.publicKey)
+              .toString()}`}
+        </Typography>
+        {children}
+      </Box>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import PosiPage from "./posiPage";
 import { useAccounts } from "./useAccounts";
 
-export default function User() {
+export default function Maker() {
   const accounts = useAccounts();
-  return <PosiPage type={"user"} accounts={accounts} />;
+  return <PosiPage type={"maker"} accounts={accounts} />;
 }
