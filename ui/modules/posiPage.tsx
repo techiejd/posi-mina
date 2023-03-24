@@ -1,7 +1,25 @@
 import { Box, Typography } from "@mui/material";
-import { ReactNode, useEffect, useState } from "react";
+import {
+  ReactNode,
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { AccountsState, Keys } from "./useAccounts";
 import { useBlockchainState } from "./blockchainContext";
+
+export type PosiPageState = {
+  myKeys: Keys;
+};
+
+export const PosiPageContext = createContext<PosiPageState | undefined>(
+  undefined
+);
+
+export const usePosiPageState = () => {
+  return useContext(PosiPageContext);
+};
 
 const PosiPage = ({
   type,
@@ -12,12 +30,12 @@ const PosiPage = ({
   accounts: AccountsState;
   children?: ReactNode;
 }) => {
-  const [myKeys, setMyKeys] = useState<Keys | undefined>();
+  const [pageState, setPageState] = useState<PosiPageState | undefined>();
   const bState = useBlockchainState();
 
   useEffect(() => {
     if (accounts != "loading") {
-      setMyKeys(accounts[type]);
+      setPageState({ myKeys: accounts[type] });
     }
   }, [accounts]);
 
@@ -26,16 +44,18 @@ const PosiPage = ({
       <Box>
         <Typography>
           You're acting as {type} with key:{" "}
-          {myKeys == undefined ? "loading" : myKeys.publicKey.toBase58()}.
+          {pageState == undefined ? "loading" : myKeys.publicKey.toBase58()}.
         </Typography>
         <Typography>
-          {myKeys &&
+          {pageState &&
             bState &&
             `And your balance is currently: ${bState.node
-              .getBalance(myKeys.publicKey)
+              .getBalance(pageState.myKeys.publicKey)
               .toString()}`}
         </Typography>
-        {children}
+        <PosiPageContext.Provider value={pageState}>
+          {children}
+        </PosiPageContext.Provider>
       </Box>
     </div>
   );

@@ -6,11 +6,13 @@ import {
   useState,
 } from "react";
 import { Field, Mina, PublicKey, UInt64, isReady } from "snarkyjs";
+import { FeePayerSpec, Transaction } from "snarkyjs/dist/node/lib/mina";
 
 export type BlockchainState = {
   local: any;
   node: {
     getBalance: (publicKey: PublicKey, tokenId?: Field) => UInt64;
+    transaction: (sender: FeePayerSpec, f: () => void) => Promise<Transaction>;
   };
 };
 
@@ -27,6 +29,7 @@ const BlockchainStateProvider = ({ children }: { children: ReactNode }) => {
       await isReady;
       const local = Mina.LocalBlockchain();
       Mina.setActiveInstance(local);
+      Mina.transaction;
       setBlockchainState({
         local,
         node: Mina,

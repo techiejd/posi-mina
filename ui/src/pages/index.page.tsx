@@ -44,13 +44,19 @@ export default function BasicTabs() {
         </Tabs>
       </Box>
       <TabPanel value={value} index={0}>
-        <Admin />
+        <PosiPage type={"admin"} accounts={accounts}>
+          <Admin />
+        </PosiPage>
       </TabPanel>
       <TabPanel value={value} index={1}>
-        <Maker />
+        <PosiPage type={"maker"} accounts={accounts}>
+          <Maker />
+        </PosiPage>
       </TabPanel>
       <TabPanel value={value} index={2}>
-        <Supporter />
+        <PosiPage type={"supporter"} accounts={accounts}>
+          <Supporter />
+        </PosiPage>
       </TabPanel>
     </Box>
   );

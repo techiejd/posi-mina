@@ -1,7 +1,5 @@
-import PosiPage from "./posiPage";
-import { useAccounts } from "./useAccounts";
+import { Box } from "@mui/material";
 
 export default function Supporter() {
-  const accounts = useAccounts();
-  return <PosiPage type={"supporter"} accounts={accounts} />;
+  return <Box></Box>;
 }
