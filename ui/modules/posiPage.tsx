@@ -1,6 +1,7 @@
 import { Box, Typography } from "@mui/material";
-import { ReactNode } from "react";
-import { AccountsState } from "./useAccounts";
+import { ReactNode, useEffect, useState } from "react";
+import { AccountsState, Keys } from "./useAccounts";
+import { useBlockchainState } from "./blockchainContext";
 
 const PosiPage = ({
   type,
@@ -11,16 +12,30 @@ const PosiPage = ({
   accounts: AccountsState;
   children?: ReactNode;
 }) => {
+  const [myKeys, setMyKeys] = useState<Keys | undefined>();
+  const bState = useBlockchainState();
+
+  useEffect(() => {
+    if (accounts != "loading") {
+      setMyKeys(accounts[type]);
+    }
+  }, [accounts]);
+
   return (
     <div>
       <main>
         <Box>
           <Typography>
             You're acting as {type} with key:{" "}
-            {accounts == "loading"
-              ? "loading"
-              : accounts[type].publicKey.toBase58()}
-            .
+            {myKeys == undefined ? "loading" : myKeys.publicKey.toBase58()}.
+          </Typography>
+          <Typography>
+            {myKeys && bState && (
+              <Typography>
+                And your balance is currently:{" "}
+                {bState.node.getBalance(myKeys.publicKey).toString()}
+              </Typography>
+            )}
           </Typography>
           {children}
         </Box>
