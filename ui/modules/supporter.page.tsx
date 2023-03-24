@@ -1,5 +1,5 @@
-import PosiPage from "../../modules/posiPage";
-import { useAccounts } from "../../modules/useAccounts";
+import PosiPage from "./posiPage";
+import { useAccounts } from "./useAccounts";
 
 export default function Supporter() {
   const accounts = useAccounts();
