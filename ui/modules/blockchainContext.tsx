@@ -27,7 +27,7 @@ const BlockchainStateProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     (async () => {
       await isReady;
-      const local = Mina.LocalBlockchain();
+      const local = Mina.LocalBlockchain({ proofsEnabled: false });
       Mina.setActiveInstance(local);
       Mina.transaction;
       setBlockchainState({

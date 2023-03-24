@@ -11,7 +11,7 @@ import { usePosiPageState } from "./posiPage";
 import { useState } from "react";
 import { AccountUpdate, PrivateKey, PublicKey } from "snarkyjs";
 import { useBlockchainState } from "./blockchainContext";
-import { PosiContract } from "posi";
+import { Add } from "posi";
 
 export default function Admin() {
   const pageState = usePosiPageState();
@@ -26,7 +26,7 @@ export default function Admin() {
     const { node } = bState;
     const zkAppPrivateKey = PrivateKey.random();
     const zkAppAddress = zkAppPrivateKey.toPublicKey();
-    const posiContract = new PosiContract(zkAppAddress);
+    const posiContract = new Add(zkAppAddress);
 
     const txn = await node.transaction(myKeys.publicKey, () => {
       AccountUpdate.fundNewAccount(myKeys.publicKey);
