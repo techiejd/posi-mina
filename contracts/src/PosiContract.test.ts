@@ -10,7 +10,7 @@
  */
 
 import { ContractApi, Key } from '@zkfs/contract-api';
-import { PosiContract } from './PosiContract';
+import { BalanceInfo, PosiContract } from './PosiContract';
 import {
   isReady,
   shutdown,
@@ -81,7 +81,6 @@ describe('Posi', () => {
   });
 
   async function localDeploy() {
-    console.log('WOrd');
     const txn = await node.transaction(posiContract, adminAccount, () => {
       AccountUpdate.fundNewAccount(adminAccount);
       posiContract.deploy({ zkappKey: posiContractPrivateKey });
@@ -92,13 +91,9 @@ describe('Posi', () => {
   }
 
   it('generates and deploys the Posi smart contract with deployer as owner', async () => {
-    console.log('AYO WTF');
     await localDeploy();
     const owner = posiContract.owner.get();
 
-    console.log('WTF');
-    console.log(owner);
-    console.log(adminAccount);
     expect(owner).toEqual(adminAccount);
   });
 
@@ -108,8 +103,6 @@ describe('Posi', () => {
     expect(
       posiContract.deposits.notExists<Field>(posiCidDepositKey)
     ).toBeTruthy();
-
-    console.log('In here yo1');
 
     const txn = await node.transaction(posiContract, adminAccount, () => {
       posiContract.mint(
@@ -123,15 +116,18 @@ describe('Posi', () => {
         ])
       );
     });
-    console.log('tx');
     await txn.prove();
-    console.log('prove');
     await txn.sign([adminKey]).send();
-    console.log('send');
 
-    console.log('In here yo');
-
-    const [value, _] = posiContract.deposits.get(PublicKey, posiCidDepositKey);
-    expect(value).toStrictEqual(makerAccount);
+    const [value, _] = posiContract.deposits.get(
+      BalanceInfo,
+      posiCidDepositKey
+    );
+    const expectedVal: BalanceInfo = {
+      url: posiUrl,
+      owner: makerAccount,
+      spend: [makerAccount, makerAccount, makerAccount],
+    };
+    expect(value).toStrictEqual(expectedVal);
   });
 });

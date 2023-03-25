@@ -1,16 +1,11 @@
 import {
   Field,
-  SmartContract,
   state,
   State,
   method,
-  Poseidon,
   PublicKey,
   Signature,
   CircuitString,
-  UInt32,
-  Circuit,
-  PrivateKey,
   Struct,
 } from 'snarkyjs';
 
@@ -63,39 +58,21 @@ export class PosiContract extends OffchainStateContract {
     cid: Field,
     signature: Signature
   ) {
-    Circuit.log('1');
     const owner = this.owner.get();
-    Circuit.log('2');
     this.owner.assertEquals(owner);
-    Circuit.log('3');
 
     const depositIdx = Key.fromType<Field>(Field, cid);
-    Circuit.log('4');
     this.deposits.assertNotExists(depositIdx);
-    Circuit.log('5');
 
     signature
       .verify(owner, [...to.toFields(), ...url.toFields(), cid])
       .assertTrue();
 
-    Circuit.log('6');
-
-    Circuit.log(url);
-    Circuit.log(owner);
-    Circuit.log(to);
-
-    const bInfo = new BalanceInfo({
+    this.deposits.set<Field, BalanceInfo>(BalanceInfo, depositIdx, {
       url: url,
       owner: to,
       spend: [to, to, to],
     });
-
-    Circuit.log(bInfo);
-    Circuit.log('bInfo');
-
-    this.deposits.set<Field, BalanceInfo>(PublicKey, depositIdx, bInfo);
-
-    Circuit.log('7');
   }
 
   /** @method allow(
