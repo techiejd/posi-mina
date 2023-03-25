@@ -10,129 +10,78 @@ import {
   CircuitString,
   UInt32,
   Circuit,
+  PrivateKey,
+  Struct,
 } from 'snarkyjs';
 
-type Balance = {
-  cid: Field;
-  url: CircuitString;
-  owner: PublicKey;
-  spend: PublicKey[];
-};
-// My totally safe OneWe storage service that totally authenticates every user.
-// In this js example not so bad because exported vars are read only.
-export const balances: { [ledger: number]: Balance[] } = {};
+import {
+  offchainState,
+  OffchainStateContract,
+  OffchainState,
+  OffchainStateMap,
+  Key,
+} from 'zkfs/packages/contract-api/src';
 
-const flattenedBalances = (balances: Balance[]) => {
-  return balances.flatMap((balance) => {
-    return [
-      balance.cid,
-      ...balance.url.toFields(),
-      ...balance.owner.toFields(),
-      ...balance.spend.flatMap((pk) => pk.toFields()),
-    ];
-  });
-};
+export class BalanceInfo extends Struct({
+  url: CircuitString,
+  owner: PublicKey,
+  spend: [PublicKey, PublicKey, PublicKey],
+}) {}
 
-export class PosiContract extends SmartContract {
+export class PosiContract extends OffchainStateContract {
   @state(PublicKey) owner = State<PublicKey>();
-  @state(Field) balancesHash = State<Field>();
-  @state(UInt32) testCase = State<UInt32>();
+  @offchainState() public deposits = OffchainState.fromMap();
 
-  @method initState(owner: PublicKey, testCase: UInt32) {
-    Circuit.log('ayo1: ', testCase);
-    console.log('ayo2: ', testCase);
+  public init() {
+    super.init();
+    this.deposits.setRootHash(OffchainStateMap.initialRootHash());
+  }
+
+  /**
+   * It takes a public key and returns a key that can be used
+   * to retrieve the deposit of the public key
+   *
+   * @param {PublicKey} address - PublicKey
+   * The public key of the account that you want to get the deposit key for.
+   *
+   * @returns A Key<PublicKey>
+   */
+  public getDepositKey(address: PublicKey): Key<PublicKey> {
+    return Key.fromType<PublicKey>(PublicKey, address);
+  }
+
+  @method initState(owner: PublicKey) {
     this.owner.set(owner);
-    this.testCase.set(testCase);
-    // TODO(techiejd): check that the test case is not already in balances.
-    const idx = Number(testCase.toString());
-    Circuit.log('ayo2.1', idx);
-    console.log('ayo2.1', idx);
-    Field(Object.keys(balances).indexOf(String(idx))).assertEquals(-1);
-    balances[idx] = [];
-    Circuit.log('ayo3: ', balances[idx]);
-    console.log('ayo4: ', balances[idx]);
-    Circuit.log('ayo5: ', Poseidon.hash(flattenedBalances(balances[idx])));
-    console.log('ayo6: ', Poseidon.hash(flattenedBalances(balances[idx])));
-    this.balancesHash.set(Poseidon.hash(flattenedBalances(balances[idx])));
   }
 
   @method mint(
     to: PublicKey,
     url: CircuitString,
     cid: Field,
-    signature: Signature,
-    testCase: UInt32
+    signature: Signature
   ) {
-    console.log(testCase);
-    Circuit.log(testCase);
-    Circuit.log('Here');
     const owner = this.owner.get();
     this.owner.assertEquals(owner);
 
-    Circuit.log('1');
-
-    const idx = Number(testCase.toString());
-    this.testCase.assertEquals(testCase);
-
-    Circuit.log('1.5');
-
-    Field(
-      balances[idx].findIndex(
-        (balance) => balance.cid.equals(cid) || balance.url.equals(url)
-      )
-    ).assertEquals(-1);
-
-    Circuit.log('2');
-
-    const balancesHash = this.balancesHash.get();
-    Circuit.log('2.1');
-    this.balancesHash.assertEquals(balancesHash);
-    Circuit.log('2.2');
-    console.log(balances[idx]);
-    Circuit.log(Poseidon.hash(flattenedBalances(balances[idx])));
-    balancesHash.assertEquals(Poseidon.hash(flattenedBalances(balances[idx])));
-
-    Circuit.log('3');
+    const depositIdx = Key.fromType<Field>(Field, cid);
+    this.deposits.assertNotExists(depositIdx);
 
     signature
-      .verify(owner, [
-        ...to.toFields(),
-        ...url.toFields(),
-        cid,
-        ...testCase.toFields(),
-      ])
+      .verify(owner, [...to.toFields(), ...url.toFields(), cid])
       .assertTrue();
 
-    Circuit.log('4');
-
-    balances[idx].push({ cid: cid, url: url, owner: to, spend: [] });
-
-    Circuit.log('5');
-
-    this.balancesHash.set(Poseidon.hash(flattenedBalances(balances[idx])));
+    this.deposits.set<Field, BalanceInfo>(BalanceInfo, depositIdx, {
+      url: CircuitString,
+      owner: to,
+      spend: [],
+    });
   }
 
-  @method allow(
+  /** @method allow(
     spender: PublicKey,
     cid: Field,
     signature: Signature,
     testCase: UInt32 = UInt32.from(0)
   ) {
-    const idx = Number(testCase.toString());
-    this.testCase.assertEquals(testCase);
-
-    this.balancesHash
-      .get()
-      .assertEquals(Poseidon.hash(flattenedBalances(balances[idx])));
-
-    const balanceIdx = balances[idx].findIndex((balance) =>
-      balance.cid.equals(cid)
-    );
-    balances[idx][balanceIdx] = {
-      ...balances[idx][balanceIdx],
-      spend: [...balances[idx][balanceIdx].spend, spender],
-    };
-
-    this.balancesHash.set(Poseidon.hash(flattenedBalances(balances[idx])));
-  }
+  } */
 }

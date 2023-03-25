@@ -9,7 +9,8 @@
  * - Allow to claim
  */
 
-import { PosiContract, balances } from './PosiContract';
+import { Key } from 'zkfs/packages/contract-api/src';
+import { BalanceInfo, PosiContract } from './PosiContract';
 import {
   isReady,
   shutdown,
@@ -21,7 +22,6 @@ import {
   CircuitString,
   Poseidon,
   Signature,
-  UInt32,
 } from 'snarkyjs';
 
 /*
@@ -31,7 +31,7 @@ import {
  * See https://docs.minaprotocol.com/zkapps for more info.
  */
 
-let proofsEnabled = true;
+let proofsEnabled = false;
 
 describe('Posi', () => {
   let adminAccount: PublicKey,
@@ -42,7 +42,8 @@ describe('Posi', () => {
     posiContractPrivateKey: PrivateKey,
     posiContract: PosiContract,
     posiUrl: CircuitString,
-    posiCid: Field;
+    posiCid: Field,
+    posiCidDepositKey: Key<Field>;
 
   beforeAll(async () => {
     await isReady;
@@ -50,7 +51,10 @@ describe('Posi', () => {
   });
 
   beforeEach(() => {
-    const Local = Mina.LocalBlockchain({ proofsEnabled });
+    const Local = Mina.LocalBlockchain({
+      proofsEnabled,
+      enforceTransactionLimits: false,
+    });
     Mina.setActiveInstance(Local);
     ({ privateKey: adminKey, publicKey: adminAccount } = Local.testAccounts[0]);
     ({ privateKey: makerKey, publicKey: makerAccount } = Local.testAccounts[1]);
@@ -63,6 +67,7 @@ describe('Posi', () => {
     posiCid = Poseidon.hash(
       CircuitString.fromString('{data: data}').toFields()
     );
+    posiCidDepositKey = Key.fromType<Field>(Field, posiCid);
   });
 
   afterAll(() => {
@@ -72,12 +77,12 @@ describe('Posi', () => {
     setTimeout(shutdown, 0);
   });
 
-  async function localDeploy(testCase: UInt32) {
+  async function localDeploy() {
     console.log('WOrd');
     Mina.transaction(adminAccount, () => {
       AccountUpdate.fundNewAccount(adminAccount);
       posiContract.deploy({ zkappKey: posiContractPrivateKey });
-      posiContract.initState(adminAccount, testCase);
+      posiContract.initState(adminAccount);
     })
       .then((txn) => {
         txn
@@ -99,7 +104,7 @@ describe('Posi', () => {
 
   it('generates and deploys the Posi smart contract with deployer as owner', async () => {
     console.log('AYO WTF');
-    await localDeploy(UInt32.from(0));
+    await localDeploy();
     const owner = posiContract.owner.get();
 
     console.log('WTF');
@@ -109,11 +114,10 @@ describe('Posi', () => {
   });
 
   it('allows owner to mint to another account fixed', async () => {
-    const testIdx = UInt32.from(2);
-    const ledgerIdx = Number(testIdx.toString());
-    await localDeploy(testIdx);
-
-    expect(balances[ledgerIdx].length).toEqual(0);
+    expect(posiContract.deposits.mapName).toBe(undefined);
+    expect(posiContract.deposits.notExists<Field>(posiCidDepositKey)).toEqual(
+      true
+    );
 
     console.log('In here yo1');
 
@@ -126,19 +130,17 @@ describe('Posi', () => {
           ...makerAccount.toFields(),
           ...posiUrl.toFields(),
           posiCid,
-          ...testIdx.toFields(),
-        ]),
-        testIdx
+        ])
       );
     });
     await txn.prove();
     await txn.send();
 
     console.log('In here yo');
-    const firstBalance = balances[ledgerIdx][0];
 
-    expect(balances[ledgerIdx].length).toEqual(1);
-    expect(firstBalance).toStrictEqual({
+    expect(
+      posiContract.deposits.get(BalanceInfo, posiCidDepositKey)
+    ).toStrictEqual({
       cid: posiCid,
       url: posiUrl,
       owner: makerAccount,
