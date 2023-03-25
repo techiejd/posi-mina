@@ -114,6 +114,8 @@ describe('Posi', () => {
   });
 
   it('allows owner to mint to another account fixed', async () => {
+    await localDeploy();
+
     expect(posiContract.deposits.mapName).toBe(undefined);
     expect(posiContract.deposits.notExists<Field>(posiCidDepositKey)).toEqual(
       true
