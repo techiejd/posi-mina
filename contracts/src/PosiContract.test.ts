@@ -22,6 +22,7 @@ import {
   CircuitString,
   Poseidon,
   Signature,
+  Bool,
 } from 'snarkyjs';
 
 /*
@@ -90,20 +91,7 @@ describe('Posi', () => {
     await txn.sign([adminKey, posiContractPrivateKey]).send();
   }
 
-  it('generates and deploys the Posi smart contract with deployer as owner', async () => {
-    await localDeploy();
-    const owner = posiContract.owner.get();
-
-    expect(owner).toEqual(adminAccount);
-  });
-
-  it('allows owner to mint to another account fixed', async () => {
-    await localDeploy();
-
-    expect(
-      posiContract.deposits.notExists<Field>(posiCidDepositKey)
-    ).toBeTruthy();
-
+  async function mintToMaker() {
     const txn = await node.transaction(posiContract, adminAccount, () => {
       posiContract.mint(
         makerAccount,
@@ -118,6 +106,23 @@ describe('Posi', () => {
     });
     await txn.prove();
     await txn.sign([adminKey]).send();
+  }
+
+  it('generates and deploys the Posi smart contract with deployer as owner', async () => {
+    await localDeploy();
+    const owner = posiContract.owner.get();
+
+    expect(owner).toEqual(adminAccount);
+  });
+
+  it('allows admin to mint to another account fixed', async () => {
+    await localDeploy();
+
+    expect(
+      posiContract.deposits.notExists<Field>(posiCidDepositKey)
+    ).toBeTruthy();
+
+    await mintToMaker(); // Under test
 
     const [value, _] = posiContract.deposits.get(
       BalanceInfo,
@@ -128,6 +133,39 @@ describe('Posi', () => {
       owner: makerAccount,
       spend: [makerAccount, makerAccount, makerAccount],
     };
+    expect(value).toStrictEqual(expectedVal);
+  });
+
+  it('maker can admin as spender', async () => {
+    await localDeploy();
+    await mintToMaker();
+    const grant = new Bool(true);
+
+    const txn = await node.transaction(posiContract, makerAccount, () => {
+      posiContract.allow(
+        adminAccount,
+        posiCid,
+        grant,
+        Signature.create(adminKey, [
+          ...adminAccount.toFields(),
+          posiCid,
+          grant.toField(),
+        ])
+      );
+    });
+    await txn.prove();
+    await txn.sign([makerKey]).send();
+
+    const [value, _] = posiContract.deposits.get(
+      BalanceInfo,
+      posiCidDepositKey
+    );
+    const expectedVal = new BalanceInfo({
+      url: posiUrl,
+      owner: makerAccount,
+      spend: [adminAccount, makerAccount, makerAccount],
+    });
+
     expect(value).toStrictEqual(expectedVal);
   });
 });
