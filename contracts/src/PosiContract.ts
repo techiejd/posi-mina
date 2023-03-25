@@ -20,7 +20,7 @@ import {
   OffchainState,
   OffchainStateMap,
   Key,
-} from 'zkfs/packages/contract-api/src';
+} from '@zkfs/contract-api';
 
 export class BalanceInfo extends Struct({
   url: CircuitString,

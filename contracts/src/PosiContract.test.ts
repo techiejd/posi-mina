@@ -9,7 +9,7 @@
  * - Allow to claim
  */
 
-import { Key } from 'zkfs/packages/contract-api/src';
+import { Key } from '@zkfs/contract-api';
 import { BalanceInfo, PosiContract } from './PosiContract';
 import {
   isReady,
@@ -79,27 +79,13 @@ describe('Posi', () => {
 
   async function localDeploy() {
     console.log('WOrd');
-    Mina.transaction(adminAccount, () => {
+    const txn = await Mina.transaction(adminAccount, () => {
       AccountUpdate.fundNewAccount(adminAccount);
       posiContract.deploy({ zkappKey: posiContractPrivateKey });
       posiContract.initState(adminAccount);
-    })
-      .then((txn) => {
-        txn
-          .prove()
-          .then((proof) => {
-            txn.sign([adminKey, posiContractPrivateKey]).send();
-          })
-          .catch((onrejected) => {
-            console.log('reject1');
-            console.log(onrejected);
-          });
-        // this tx needs .sign(), because `deploy()` adds an account update that requires signature authorization
-      })
-      .catch((onrejected) => {
-        console.log('rejected');
-        console.log(onrejected);
-      });
+    });
+    await txn.prove();
+    await txn.sign([adminKey, posiContractPrivateKey]).send();
   }
 
   it('generates and deploys the Posi smart contract with deployer as owner', async () => {

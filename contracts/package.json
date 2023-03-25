@@ -48,6 +48,7 @@
     "snarkyjs": "0.9.*"
   },
   "dependencies": {
+    "@zkfs/contract-api": "^0.1.9-develop.159",
     "zkfs": "github:zkfs-io/zkfs"
   }
 }
