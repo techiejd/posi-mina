@@ -10,7 +10,7 @@
  */
 
 import { ContractApi, Key } from '@zkfs/contract-api';
-import { BalanceInfo, PosiContract } from './PosiContract';
+import { PosiContract } from './PosiContract';
 import {
   isReady,
   shutdown,
@@ -132,13 +132,7 @@ describe('Posi', () => {
     console.log('In here yo');
 
     expect(
-      posiContract.deposits.get(BalanceInfo, posiCidDepositKey)
-    ).toStrictEqual(
-      new BalanceInfo({
-        url: posiUrl,
-        owner: makerAccount,
-        spend: [makerAccount, makerAccount, makerAccount],
-      })
-    );
+      posiContract.deposits.get(PublicKey, posiCidDepositKey)
+    ).toStrictEqual(makerAccount);
   });
 });

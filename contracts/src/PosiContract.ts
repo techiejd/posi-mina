@@ -22,12 +22,6 @@ import {
   Key,
 } from '@zkfs/contract-api';
 
-export class BalanceInfo extends Struct({
-  url: CircuitString,
-  owner: PublicKey,
-  spend: [PublicKey, PublicKey, PublicKey],
-}) {}
-
 export class PosiContract extends OffchainStateContract {
   @state(PublicKey) owner = State<PublicKey>();
   @offchainState() public deposits = OffchainState.fromMap();
@@ -80,19 +74,8 @@ export class PosiContract extends OffchainStateContract {
     Circuit.log(url);
     Circuit.log(owner);
     Circuit.log(to);
-    Circuit.log(
-      new BalanceInfo({
-        url: CircuitString,
-        owner: to,
-        spend: [to, to, to],
-      })
-    );
 
-    this.deposits.set<Field, BalanceInfo>(BalanceInfo, depositIdx, {
-      url: CircuitString,
-      owner: to,
-      spend: [to, to, to],
-    });
+    this.deposits.set<Field, PublicKey>(PublicKey, depositIdx, to);
 
     Circuit.log('7');
   }
