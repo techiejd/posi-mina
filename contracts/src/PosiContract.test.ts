@@ -126,13 +126,12 @@ describe('Posi', () => {
     console.log('tx');
     await txn.prove();
     console.log('prove');
-    await txn.send();
+    await txn.sign([adminKey]).send();
     console.log('send');
 
     console.log('In here yo');
 
-    expect(
-      posiContract.deposits.get(PublicKey, posiCidDepositKey)
-    ).toStrictEqual(makerAccount);
+    const [value, _] = posiContract.deposits.get(PublicKey, posiCidDepositKey);
+    expect(value).toStrictEqual(makerAccount);
   });
 });

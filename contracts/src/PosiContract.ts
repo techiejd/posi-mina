@@ -22,7 +22,16 @@ import {
   Key,
 } from '@zkfs/contract-api';
 
+export class BalanceInfo extends Struct({
+  url: CircuitString,
+  owner: PublicKey,
+  spend: [PublicKey, PublicKey, PublicKey],
+}) {}
+
 export class PosiContract extends OffchainStateContract {
+  // until snarkyjs fixes bug with state indexes in extended classes
+  @state(Field) public placeholder = State<Field>();
+
   @state(PublicKey) owner = State<PublicKey>();
   @offchainState() public deposits = OffchainState.fromMap();
 
@@ -75,7 +84,16 @@ export class PosiContract extends OffchainStateContract {
     Circuit.log(owner);
     Circuit.log(to);
 
-    this.deposits.set<Field, PublicKey>(PublicKey, depositIdx, to);
+    const bInfo = new BalanceInfo({
+      url: url,
+      owner: to,
+      spend: [to, to, to],
+    });
+
+    Circuit.log(bInfo);
+    Circuit.log('bInfo');
+
+    this.deposits.set<Field, BalanceInfo>(PublicKey, depositIdx, bInfo);
 
     Circuit.log('7');
   }
