@@ -44,7 +44,10 @@ const PosiPage = ({
       <Box>
         <Typography>
           You're acting as {type} with key:{" "}
-          {pageState == undefined ? "loading" : myKeys.publicKey.toBase58()}.
+          {pageState == undefined
+            ? "loading"
+            : pageState.myKeys.publicKey.toBase58()}
+          .
         </Typography>
         <Typography>
           {pageState &&
