@@ -9,7 +9,7 @@
  * - Allow to claim
  */
 
-import { Key } from '@zkfs/contract-api';
+import { ContractApi, Key } from '@zkfs/contract-api';
 import { BalanceInfo, PosiContract } from './PosiContract';
 import {
   isReady,
@@ -43,7 +43,8 @@ describe('Posi', () => {
     posiContract: PosiContract,
     posiUrl: CircuitString,
     posiCid: Field,
-    posiCidDepositKey: Key<Field>;
+    posiCidDepositKey: Key<Field>,
+    node: ContractApi;
 
   beforeAll(async () => {
     await isReady;
@@ -68,6 +69,8 @@ describe('Posi', () => {
       CircuitString.fromString('{data: data}').toFields()
     );
     posiCidDepositKey = Key.fromType<Field>(Field, posiCid);
+
+    node = new ContractApi();
   });
 
   afterAll(() => {
@@ -79,7 +82,7 @@ describe('Posi', () => {
 
   async function localDeploy() {
     console.log('WOrd');
-    const txn = await Mina.transaction(adminAccount, () => {
+    const txn = await node.transaction(posiContract, adminAccount, () => {
       AccountUpdate.fundNewAccount(adminAccount);
       posiContract.deploy({ zkappKey: posiContractPrivateKey });
       posiContract.initState(adminAccount);
@@ -102,14 +105,13 @@ describe('Posi', () => {
   it('allows owner to mint to another account fixed', async () => {
     await localDeploy();
 
-    expect(posiContract.deposits.mapName).toBe(undefined);
-    expect(posiContract.deposits.notExists<Field>(posiCidDepositKey)).toEqual(
-      true
-    );
+    expect(
+      posiContract.deposits.notExists<Field>(posiCidDepositKey)
+    ).toBeTruthy();
 
     console.log('In here yo1');
 
-    const txn = await Mina.transaction(adminAccount, () => {
+    const txn = await node.transaction(posiContract, adminAccount, () => {
       posiContract.mint(
         makerAccount,
         posiUrl,
@@ -121,18 +123,22 @@ describe('Posi', () => {
         ])
       );
     });
+    console.log('tx');
     await txn.prove();
+    console.log('prove');
     await txn.send();
+    console.log('send');
 
     console.log('In here yo');
 
     expect(
       posiContract.deposits.get(BalanceInfo, posiCidDepositKey)
-    ).toStrictEqual({
-      cid: posiCid,
-      url: posiUrl,
-      owner: makerAccount,
-      spend: [],
-    });
+    ).toStrictEqual(
+      new BalanceInfo({
+        url: posiUrl,
+        owner: makerAccount,
+        spend: [makerAccount, makerAccount, makerAccount],
+      })
+    );
   });
 });

@@ -60,21 +60,41 @@ export class PosiContract extends OffchainStateContract {
     cid: Field,
     signature: Signature
   ) {
+    Circuit.log('1');
     const owner = this.owner.get();
+    Circuit.log('2');
     this.owner.assertEquals(owner);
+    Circuit.log('3');
 
     const depositIdx = Key.fromType<Field>(Field, cid);
+    Circuit.log('4');
     this.deposits.assertNotExists(depositIdx);
+    Circuit.log('5');
 
     signature
       .verify(owner, [...to.toFields(), ...url.toFields(), cid])
       .assertTrue();
 
+    Circuit.log('6');
+
+    Circuit.log(url);
+    Circuit.log(owner);
+    Circuit.log(to);
+    Circuit.log(
+      new BalanceInfo({
+        url: CircuitString,
+        owner: to,
+        spend: [to, to, to],
+      })
+    );
+
     this.deposits.set<Field, BalanceInfo>(BalanceInfo, depositIdx, {
       url: CircuitString,
       owner: to,
-      spend: [],
+      spend: [to, to, to],
     });
+
+    Circuit.log('7');
   }
 
   /** @method allow(
