@@ -11,7 +11,6 @@ import { usePosiPageState } from "./posiPage";
 import { useState } from "react";
 import { AccountUpdate, PrivateKey, PublicKey } from "snarkyjs";
 import { useBlockchainState } from "./blockchainContext";
-import { Add } from "posi";
 
 export default function Admin() {
   const pageState = usePosiPageState();
@@ -20,7 +19,8 @@ export default function Admin() {
   const [weRaceContracts, setWeRaceContracts] = useState<PublicKey[]>([]);
 
   const deployPosi = async () => {
-    // TODO(techiejd): Change to actual deploy.
+    // TODO(techiejd): Change to deploy Posi Contract.
+    const { Add } = await import("posi");
     if (!pageState || !bState) return;
     const { myKeys } = pageState;
     const { node } = bState;
