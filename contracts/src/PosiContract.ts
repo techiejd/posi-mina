@@ -86,24 +86,19 @@ export class PosiContract extends OffchainStateContract {
     grant: Bool, // As opposed to revoke.
     signature: Signature
   ) {
-    Circuit.log('1');
     const [balanceInfo, status] = this.deposits.get<Field, BalanceInfo>(
       BalanceInfo,
       getDepositIdx(cid)
     );
-    Circuit.log(balanceInfo);
     const owner = balanceInfo.owner;
     const spend = balanceInfo.spend;
 
-    Circuit.log('2');
     signature
       .verify(owner, [...spender.toFields(), cid, grant.toField()])
       .assertTrue();
 
-    Circuit.log('3');
     spender.equals(owner).assertFalse();
 
-    Circuit.log('4');
     Circuit.if(
       grant,
       spend[0]
@@ -115,7 +110,6 @@ export class PosiContract extends OffchainStateContract {
         .or(spend[2].equals(spender))
     ).assertTrue();
 
-    Circuit.log('5');
     const newSpend = Circuit.if(
       grant,
       [
@@ -145,8 +139,6 @@ export class PosiContract extends OffchainStateContract {
         ),
       ]
     );
-    Circuit.log(newSpend);
-    Circuit.log('6');
 
     this.deposits.set<Field, BalanceInfo>(
       BalanceInfo,
@@ -156,7 +148,6 @@ export class PosiContract extends OffchainStateContract {
         spend: newSpend,
       })
     );
-    Circuit.log('7');
   }
 
   @method claim(cid: Field, claimant: PublicKey, signature: Signature) {
