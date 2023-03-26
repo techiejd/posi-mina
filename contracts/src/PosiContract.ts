@@ -26,13 +26,13 @@ export class BalanceInfo extends Struct({
 }) {}
 
 /**
- * It takes a public key and returns a key that can be used
- * to retrieve the deposit of the public key
+ * It takes a content id, 'cid', and returns an that can be used
+ * to retrieve the data deposited at that index.
  *
- * @param {PublicKey} address - PublicKey
- * The public key of the account that you want to get the deposit key for.
+ * @param {Field} cid - Field
+ * The index of the data with that cid.
  *
- * @returns A Key<PublicKey>
+ * @returns A Key<Field>
  */
 const getDepositIdx: (cid: Field) => Key<Field> = (cid) => {
   return Key.fromType<Field>(Field, cid);
@@ -63,18 +63,21 @@ export class PosiContract extends OffchainStateContract {
     const owner = this.owner.get();
     this.owner.assertEquals(owner);
 
-    const depositIdx = getDepositIdx(cid);
-    this.deposits.assertNotExists(depositIdx);
+    this.deposits.assertNotExists(getDepositIdx(cid));
 
     signature
       .verify(owner, [...to.toFields(), ...url.toFields(), cid])
       .assertTrue();
 
-    this.deposits.set<Field, BalanceInfo>(BalanceInfo, depositIdx, {
-      url: url,
-      owner: to,
-      spend: [to, to, to],
-    });
+    this.deposits.set<Field, BalanceInfo>(
+      BalanceInfo,
+      getDepositIdx(cid),
+      new BalanceInfo({
+        url: url,
+        owner: to,
+        spend: [to, to, to],
+      })
+    );
   }
 
   @method allow(
@@ -83,17 +86,24 @@ export class PosiContract extends OffchainStateContract {
     grant: Bool, // As opposed to revoke.
     signature: Signature
   ) {
+    Circuit.log('1');
     const [balanceInfo, status] = this.deposits.get<Field, BalanceInfo>(
       BalanceInfo,
       getDepositIdx(cid)
     );
+    Circuit.log(balanceInfo);
     const owner = balanceInfo.owner;
-    let spend = balanceInfo.spend;
+    const spend = balanceInfo.spend;
 
-    signature.verify(owner, [...spender.toFields(), cid, grant.toField()]);
+    Circuit.log('2');
+    signature
+      .verify(owner, [...spender.toFields(), cid, grant.toField()])
+      .assertTrue();
 
+    Circuit.log('3');
     spender.equals(owner).assertFalse();
 
+    Circuit.log('4');
     Circuit.if(
       grant,
       spend[0]
@@ -105,6 +115,7 @@ export class PosiContract extends OffchainStateContract {
         .or(spend[2].equals(spender))
     ).assertTrue();
 
+    Circuit.log('5');
     const newSpend = Circuit.if(
       grant,
       [
@@ -134,10 +145,44 @@ export class PosiContract extends OffchainStateContract {
         ),
       ]
     );
+    Circuit.log(newSpend);
+    Circuit.log('6');
 
-    this.deposits.set<Field, BalanceInfo>(BalanceInfo, getDepositIdx(cid), {
-      ...balanceInfo,
-      spend: newSpend,
-    });
+    this.deposits.set<Field, BalanceInfo>(
+      BalanceInfo,
+      getDepositIdx(cid),
+      new BalanceInfo({
+        ...balanceInfo,
+        spend: newSpend,
+      })
+    );
+    Circuit.log('7');
+  }
+
+  @method claim(cid: Field, claimant: PublicKey, signature: Signature) {
+    const [balanceInfo, status] = this.deposits.get<Field, BalanceInfo>(
+      BalanceInfo,
+      getDepositIdx(cid)
+    );
+    const owner = balanceInfo.owner;
+    const spend = balanceInfo.spend;
+    owner.equals(claimant).assertFalse();
+
+    signature.verify(claimant, [cid, ...claimant.toFields()]).assertTrue();
+
+    claimant
+      .equals(spend[0])
+      .or(claimant.equals(spend[1]).or(claimant.equals(spend[2])))
+      .assertTrue();
+
+    this.deposits.set<Field, BalanceInfo>(
+      BalanceInfo,
+      getDepositIdx(cid),
+      new BalanceInfo({
+        ...balanceInfo,
+        owner: claimant,
+        spend: [claimant, claimant, claimant],
+      })
+    );
   }
 }

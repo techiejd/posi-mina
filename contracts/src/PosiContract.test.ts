@@ -108,6 +108,23 @@ describe('Posi', () => {
     await txn.sign([adminKey]).send();
   }
 
+  async function allowAdminToClaim(grant: Bool) {
+    const txn = await node.transaction(posiContract, makerAccount, () => {
+      posiContract.allow(
+        adminAccount,
+        posiCid,
+        grant,
+        Signature.create(makerKey, [
+          ...adminAccount.toFields(),
+          posiCid,
+          grant.toField(),
+        ])
+      );
+    });
+    await txn.prove();
+    await txn.sign([makerKey]).send();
+  }
+
   it('generates and deploys the Posi smart contract with deployer as owner', async () => {
     await localDeploy();
     const owner = posiContract.owner.get();
@@ -115,7 +132,7 @@ describe('Posi', () => {
     expect(owner).toEqual(adminAccount);
   });
 
-  it('allows admin to mint to another account fixed', async () => {
+  it('allows admin to mint Posi to another account fixed', async () => {
     await localDeploy();
 
     expect(
@@ -128,29 +145,65 @@ describe('Posi', () => {
       BalanceInfo,
       posiCidDepositKey
     );
-    const expectedVal: BalanceInfo = {
+    const expectedVal: BalanceInfo = new BalanceInfo({
       url: posiUrl,
       owner: makerAccount,
       spend: [makerAccount, makerAccount, makerAccount],
-    };
+    });
     expect(value).toStrictEqual(expectedVal);
   });
 
-  it('maker can admin as spender', async () => {
+  it('allows admin to claim a Posi', async () => {
     await localDeploy();
     await mintToMaker();
     const grant = new Bool(true);
 
+    await allowAdminToClaim(grant); // Under test.
+
+    const [value, _] = posiContract.deposits.get(
+      BalanceInfo,
+      posiCidDepositKey
+    );
+    const expectedVal = new BalanceInfo({
+      url: posiUrl,
+      owner: makerAccount,
+      spend: [adminAccount, makerAccount, makerAccount],
+    });
+
+    expect(value).toStrictEqual(expectedVal);
+  });
+
+  it("allows maker to revoke admin's allowance", async () => {
+    await localDeploy();
+    await mintToMaker();
+    await allowAdminToClaim(new Bool(true));
+    const grant = new Bool(false);
+
+    await allowAdminToClaim(grant); // Under test
+
+    const [value, _] = posiContract.deposits.get(
+      BalanceInfo,
+      posiCidDepositKey
+    );
+    const expectedVal = new BalanceInfo({
+      url: posiUrl,
+      owner: makerAccount,
+      spend: [makerAccount, makerAccount, makerAccount],
+    });
+
+    expect(value).toStrictEqual(expectedVal);
+  });
+
+  it('allows maker to set admin as a spender', async () => {
+    await localDeploy();
+    await mintToMaker();
+    await allowAdminToClaim(new Bool(true));
+
     const txn = await node.transaction(posiContract, makerAccount, () => {
-      posiContract.allow(
-        adminAccount,
+      posiContract.claim(
         posiCid,
-        grant,
-        Signature.create(adminKey, [
-          ...adminAccount.toFields(),
-          posiCid,
-          grant.toField(),
-        ])
+        adminAccount,
+        Signature.create(adminKey, [posiCid, ...adminAccount.toFields()])
       );
     });
     await txn.prove();
@@ -162,8 +215,8 @@ describe('Posi', () => {
     );
     const expectedVal = new BalanceInfo({
       url: posiUrl,
-      owner: makerAccount,
-      spend: [adminAccount, makerAccount, makerAccount],
+      owner: adminAccount,
+      spend: [adminAccount, adminAccount, adminAccount],
     });
 
     expect(value).toStrictEqual(expectedVal);
